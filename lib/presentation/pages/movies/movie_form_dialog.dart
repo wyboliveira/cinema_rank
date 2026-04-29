@@ -66,6 +66,7 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
     final notifier = ref.read(movieNotifierProvider.notifier);
     final existing = widget.existingMovie;
 
@@ -90,106 +91,111 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
           );
 
     await notifier.save(movie);
+
     if (mounted) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.existingMovie != null;
-    final genresAsync = ref.watch(genresStreamProvider);
-    final subgenresAsync = _selectedGenreId != null
-        ? ref.watch(subgenresStreamProvider(_selectedGenreId!))
-        : const AsyncData(<Subgenre>[]);
-
-    final genres = genresAsync.valueOrNull ?? <Genre>[];
-    final subgenres = subgenresAsync.valueOrNull ?? <Subgenre>[];
+    final genres = ref.watch(genresStreamProvider).valueOrNull ?? <Genre>[];
+    final subgenres = _selectedGenreId != null
+        ? ref.watch(subgenresStreamProvider(_selectedGenreId!)).valueOrNull ??
+            <Subgenre>[]
+        : <Subgenre>[];
 
     return AlertDialog(
       title: Text(isEdit ? 'Editar Filme' : 'Novo Filme'),
+      // 📖 SizedBox com altura fixa é obrigatório aqui.
+      // IntrinsicHeight + TextFormField(expands: true) conflitam porque
+      // `expands` requer altura finita do pai, que IntrinsicHeight não garante.
       content: SizedBox(
         width: 720,
+        height: 280,
         child: Form(
           key: _formKey,
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── Coluna esquerda: campos de texto ──────────────────────
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Linha 1: Título
-                      _field(_title, 'Título', required: true),
-                      const SizedBox(height: AppConstants.kSpacingSmall),
-                      // Linha 2: Gênero + Subgênero
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _GenreDropdown(
-                              genres: genres,
-                              selectedId: _selectedGenreId,
-                              onChanged: (id) => setState(() {
-                                _selectedGenreId = id;
-                                // Reseta subgênero quando o gênero muda.
-                                _selectedSubGenreId = null;
-                              }),
-                            ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Coluna esquerda: Título / Gêneros / Sinopse ───────────────
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _field(_title, 'Título', required: true),
+                    const SizedBox(height: AppConstants.kSpacingSmall),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _GenreDropdown(
+                            genres: genres,
+                            selectedId: _selectedGenreId,
+                            onChanged: (id) => setState(() {
+                              _selectedGenreId = id;
+                              _selectedSubGenreId = null;
+                            }),
                           ),
-                          const SizedBox(width: AppConstants.kSpacingSmall),
-                          Expanded(
-                            child: _SubgenreDropdown(
-                              subgenres: subgenres,
-                              selectedId: _selectedSubGenreId,
-                              enabled: _selectedGenreId != null,
-                              onChanged: (id) =>
-                                  setState(() => _selectedSubGenreId = id),
-                            ),
+                        ),
+                        const SizedBox(width: AppConstants.kSpacingSmall),
+                        Expanded(
+                          child: _SubgenreDropdown(
+                            subgenres: subgenres,
+                            selectedId: _selectedSubGenreId,
+                            enabled: _selectedGenreId != null,
+                            onChanged: (id) =>
+                                setState(() => _selectedSubGenreId = id),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: AppConstants.kSpacingSmall),
-                      // Linha 3: Sinopse (ocupa o espaço restante)
-                      Expanded(
-                        child: TextFormField(
-                          controller: _synopsis,
-                          decoration: const InputDecoration(
-                            labelText: 'Sinopse',
-                            border: OutlineInputBorder(),
-                            alignLabelWithHint: true,
-                          ),
-                          maxLines: null,
-                          expands: true,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppConstants.kSpacingSmall),
+                    // Sinopse ocupa o espaço restante da coluna.
+                    Expanded(
+                      child: TextFormField(
+                        controller: _synopsis,
+                        // expands: true requer parent com altura finita (garantida
+                        // pelo SizedBox(height: 280) acima).
+                        expands: true,
+                        maxLines: null,
+                        textAlignVertical: TextAlignVertical.top,
+                        decoration: const InputDecoration(
+                          labelText: 'Sinopse',
+                          alignLabelWithHint: true,
+                          border: OutlineInputBorder(),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: AppConstants.kSpacingMedium),
-                // ── Coluna direita: ano, diretor e imagem ─────────────────
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Linha 1: Ano
-                      _field(_year, 'Ano', required: true, isNumeric: true),
-                      const SizedBox(height: AppConstants.kSpacingSmall),
-                      // Linha 2: Diretor
-                      _field(_director, 'Diretor', required: true),
-                      const SizedBox(height: AppConstants.kSpacingSmall),
-                      // Linha 3: Seleção de imagem
-                      Expanded(child: _ImagePicker(
+              ),
+              const SizedBox(width: AppConstants.kSpacingMedium),
+              // ── Coluna direita: Ano / Diretor / Imagem ────────────────────
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _field(
+                      _year,
+                      'Ano',
+                      required: true,
+                      isNumeric: true,
+                    ),
+                    const SizedBox(height: AppConstants.kSpacingSmall),
+                    _field(_director, 'Diretor', required: true),
+                    const SizedBox(height: AppConstants.kSpacingSmall),
+                    Expanded(
+                      child: _ImagePickerArea(
                         imagePath: _imagePath,
                         onPick: _pickImage,
                         onClear: () => setState(() => _imagePath = null),
-                      )),
-                    ],
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -219,9 +225,8 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
         border: const OutlineInputBorder(),
       ),
       keyboardType: isNumeric ? TextInputType.number : null,
-      inputFormatters: isNumeric
-          ? [FilteringTextInputFormatter.digitsOnly]
-          : null,
+      inputFormatters:
+          isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null,
       validator: required
           ? (v) {
               if (v == null || v.trim().isEmpty) return '$label é obrigatório';
@@ -249,8 +254,13 @@ class _GenreDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Garante que o value exibido pertença à lista atual.
+    final validId =
+        genres.any((g) => g.id == selectedId) ? selectedId : null;
+
     return DropdownButtonFormField<String>(
-      initialValue: selectedId,
+      // ignore: deprecated_member_use
+      value: validId,
       decoration: const InputDecoration(
         labelText: 'Gênero',
         border: OutlineInputBorder(),
@@ -258,10 +268,7 @@ class _GenreDropdown extends StatelessWidget {
       hint: const Text('Não selecionado'),
       isExpanded: true,
       items: [
-        const DropdownMenuItem<String>(
-          value: null,
-          child: Text('Não selecionado'),
-        ),
+        const DropdownMenuItem<String>(value: null, child: Text('— Nenhum —')),
         ...genres.map(
           (g) => DropdownMenuItem<String>(value: g.id, child: Text(g.name)),
         ),
@@ -287,26 +294,29 @@ class _SubgenreDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Garante que selectedId seja válido para a lista atual antes de renderizar.
-    final validId = subgenres.any((s) => s.id == selectedId) ? selectedId : null;
+    final validId =
+        subgenres.any((s) => s.id == selectedId) ? selectedId : null;
 
     return DropdownButtonFormField<String>(
-      initialValue: validId,
+      // ignore: deprecated_member_use
+      value: validId,
       decoration: const InputDecoration(
         labelText: 'Subgênero',
         border: OutlineInputBorder(),
       ),
-      hint: Text(enabled ? 'Não selecionado' : 'Selecione um gênero'),
+      hint: Text(enabled ? '— Nenhum —' : 'Selecione um gênero'),
       isExpanded: true,
       items: enabled
           ? [
               const DropdownMenuItem<String>(
                 value: null,
-                child: Text('Não selecionado'),
+                child: Text('— Nenhum —'),
               ),
               ...subgenres.map(
-                (s) =>
-                    DropdownMenuItem<String>(value: s.id, child: Text(s.name)),
+                (s) => DropdownMenuItem<String>(
+                  value: s.id,
+                  child: Text(s.name),
+                ),
               ),
             ]
           : [],
@@ -316,8 +326,8 @@ class _SubgenreDropdown extends StatelessWidget {
 }
 
 // ── Área de seleção de imagem ─────────────────────────────────────────────────
-class _ImagePicker extends StatelessWidget {
-  const _ImagePicker({
+class _ImagePickerArea extends StatelessWidget {
+  const _ImagePickerArea({
     required this.imagePath,
     required this.onPick,
     required this.onClear,
@@ -343,12 +353,10 @@ class _ImagePicker extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 ClipRRect(
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.kCardBorderRadius),
-                  child: Image.file(
-                    File(imagePath!),
-                    fit: BoxFit.cover,
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.kCardBorderRadius,
                   ),
+                  child: Image.file(File(imagePath!), fit: BoxFit.cover),
                 ),
                 Positioned(
                   top: 4,
@@ -380,6 +388,9 @@ class _ImagePicker extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
+                // 📖 Colar imagem via Ctrl+V requer o pacote `super_clipboard`
+                // (suporte nativo Windows a dados binários na área de transferência).
+                // Implementação planejada em próxima iteração.
                 Text(
                   'Colar  Ctrl + V',
                   style: theme.textTheme.bodySmall?.copyWith(
