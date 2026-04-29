@@ -4,6 +4,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:super_clipboard/super_clipboard.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../domain/entities/genre.dart';
@@ -52,6 +56,62 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
     _director.dispose();
     _synopsis.dispose();
     super.dispose();
+  }
+
+  // Tenta colar imagem da área de transferência.
+  // Ordem de preferência: PNG → JPEG → GIF → WebP → BMP → URI de arquivo.
+  Future<void> _tryPasteImage() async {
+    final clipboard = SystemClipboard.instance;
+    if (clipboard == null) return;
+
+    final reader = await clipboard.read();
+
+    // Formatos binários de imagem (dados brutos na clipboard)
+    final imageFormats = <(FileFormat, String)>[
+      (Formats.png, 'png'),
+      (Formats.jpeg, 'jpg'),
+      (Formats.gif, 'gif'),
+      (Formats.webp, 'webp'),
+      (Formats.bmp, 'bmp'),
+      (Formats.tiff, 'tiff'),
+    ];
+
+    for (final (format, ext) in imageFormats) {
+      if (reader.canProvide(format)) {
+        reader.getFile(format, (file) async {
+          final bytes = await file.readAll();
+          final savedPath = await _savePastedImage(bytes, ext);
+          if (mounted) setState(() => _imagePath = savedPath);
+        });
+        return;
+      }
+    }
+
+    // Fallback: URI de arquivo (imagem copiada no Explorer com Ctrl+C)
+    if (reader.canProvide(Formats.fileUri)) {
+      final uri = await reader.readValue(Formats.fileUri);
+      if (uri != null) {
+        final filePath = uri.toFilePath();
+        if (_isImagePath(filePath) && mounted) {
+          setState(() => _imagePath = filePath);
+        }
+      }
+    }
+  }
+
+  Future<String> _savePastedImage(Uint8List bytes, String ext) async {
+    final dir = await getApplicationSupportDirectory();
+    final imagesDir = Directory(p.join(dir.path, 'pasted_images'));
+    await imagesDir.create(recursive: true);
+    final filePath = p.join(imagesDir.path, '${const Uuid().v4()}.$ext');
+    await File(filePath).writeAsBytes(bytes);
+    return filePath;
+  }
+
+  bool _isImagePath(String path) {
+    final lower = path.toLowerCase();
+    return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff']
+        .any(lower.endsWith);
   }
 
   Future<void> _pickImage() async {
@@ -104,8 +164,21 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
             <Subgenre>[]
         : <Subgenre>[];
 
-    return AlertDialog(
-      title: Text(isEdit ? 'Editar Filme' : 'Novo Filme'),
+    // Focus intercepta Ctrl+V globalmente no dialog para colar imagens.
+    // KeyEventResult.ignored garante que campos de texto continuem recebendo
+    // o evento e possam colar texto normalmente pelo seu próprio handler.
+    return Focus(
+      canRequestFocus: false,
+      onKeyEvent: (_, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.keyV &&
+            HardwareKeyboard.instance.isControlPressed) {
+          _tryPasteImage();
+        }
+        return KeyEventResult.ignored;
+      },
+      child: AlertDialog(
+        title: Text(isEdit ? 'Editar Filme' : 'Novo Filme'),
       // 📖 SizedBox com altura fixa é obrigatório aqui.
       // IntrinsicHeight + TextFormField(expands: true) conflitam porque
       // `expands` requer altura finita do pai, que IntrinsicHeight não garante.
@@ -189,6 +262,7 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
                       child: _ImagePickerArea(
                         imagePath: _imagePath,
                         onPick: _pickImage,
+                        onPaste: _tryPasteImage,
                         onClear: () => setState(() => _imagePath = null),
                       ),
                     ),
@@ -209,6 +283,7 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
           child: Text(isEdit ? 'Salvar' : 'Adicionar'),
         ),
       ],
+      ),
     );
   }
 
@@ -330,11 +405,13 @@ class _ImagePickerArea extends StatelessWidget {
   const _ImagePickerArea({
     required this.imagePath,
     required this.onPick,
+    required this.onPaste,
     required this.onClear,
   });
 
   final String? imagePath;
   final VoidCallback onPick;
+  final VoidCallback onPaste;
   final VoidCallback onClear;
 
   @override
@@ -388,14 +465,16 @@ class _ImagePickerArea extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                // 📖 Colar imagem via Ctrl+V requer o pacote `super_clipboard`
-                // (suporte nativo Windows a dados binários na área de transferência).
-                // Implementação planejada em próxima iteração.
-                Text(
-                  'Colar  Ctrl + V',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
+                GestureDetector(
+                  onTap: onPaste,
+                  child: Text(
+                    'Colar  Ctrl + V',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                      decorationColor: theme.colorScheme.primary,
+                    ),
                   ),
                 ),
               ],
