@@ -15,7 +15,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       textTheme: GoogleFonts.interTextTheme(),
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -33,7 +33,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),

@@ -1,46 +1,61 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../movies/movies_page.dart';
+import '../rankings/rankings_page.dart';
 
-// Tela inicial com atalhos para Biblioteca de Filmes e Listas de Ranking.
-class HomePage extends StatelessWidget {
+// Tela inicial com navegação lateral (NavigationRail) para Desktop.
+// 📖 NavigationRail é o padrão Material para Desktop; substitui BottomNavigationBar
+// que é otimizado para telas pequenas/touch.
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  State<HomePage> createState() => _HomePageState();
+}
 
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
+
+  static const _pages = [MoviesPage(), RankingsPage()];
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cinema Rank'),
-        centerTitle: false,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppConstants.kSpacingLarge),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Bem-vindo!', style: theme.textTheme.headlineMedium),
-            const SizedBox(height: AppConstants.kSpacingSmall),
-            Text(
-              'Cadastre filmes e crie seus rankings.',
-              style: theme.textTheme.bodyLarge,
+      body: Row(
+        children: [
+          NavigationRail(
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+            labelType: NavigationRailLabelType.all,
+            leading: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: AppConstants.kSpacingLarge,
+              ),
+              child: Text(
+                'CR',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            const SizedBox(height: AppConstants.kSpacingLarge),
-            // TODO(feat): substituir por cards de navegação com ícones
-            ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.movie_outlined),
-              label: const Text('Biblioteca de Filmes'),
-            ),
-            const SizedBox(height: AppConstants.kSpacingMedium),
-            ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.format_list_numbered),
-              label: const Text('Minhas Listas'),
-            ),
-          ],
-        ),
+            destinations: const [
+              NavigationRailDestination(
+                icon: Icon(Icons.movie_outlined),
+                selectedIcon: Icon(Icons.movie),
+                label: Text('Filmes'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.format_list_numbered_outlined),
+                selectedIcon: Icon(Icons.format_list_numbered),
+                label: Text('Rankings'),
+              ),
+            ],
+          ),
+          const VerticalDivider(width: 1),
+          Expanded(child: _pages[_selectedIndex]),
+        ],
       ),
     );
   }

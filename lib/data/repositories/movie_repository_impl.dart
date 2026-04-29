@@ -1,25 +1,39 @@
+import '../../core/utils/logger.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/repositories/movie_repository.dart';
+import '../database/daos/movie_dao.dart';
+import '../models/movie_model.dart';
 
-// TODO(implementação): substituir pelo DAO do Drift quando o schema estiver definido.
-// 📖 Esta classe concretiza o contrato MovieRepository usando o banco de dados.
-// A presentation/ nunca importa esta classe diretamente — ela é injetada via Riverpod.
 class MovieRepositoryImpl implements MovieRepository {
-  // ignore: unused_field
-  // final MovieDao _dao; // será injetado via construtor
+  const MovieRepositoryImpl(this._dao);
+
+  final MovieDao _dao;
 
   @override
-  Future<List<Movie>> getAll() async => [];
+  Stream<List<Movie>> watchAll() =>
+      _dao.watchAll().map((rows) => rows.map((r) => r.toEntity()).toList());
 
   @override
-  Future<Movie?> getById(String id) async => null;
+  Future<List<Movie>> getAll() async {
+    final rows = await _dao.getAll();
+    return rows.map((r) => r.toEntity()).toList();
+  }
 
   @override
-  Future<void> save(Movie movie) async {}
+  Future<Movie?> getById(String id) async {
+    final row = await _dao.getById(id);
+    return row?.toEntity();
+  }
 
   @override
-  Future<void> delete(String id) async {}
+  Future<void> save(Movie movie) async {
+    await _dao.upsert(movie.toCompanion());
+    AppLogger.info('Filme salvo', {'id': movie.id, 'title': movie.title});
+  }
 
   @override
-  Stream<List<Movie>> watchAll() => Stream.value([]);
+  Future<void> delete(String id) async {
+    await _dao.deleteById(id);
+    AppLogger.info('Filme removido', {'id': id});
+  }
 }
