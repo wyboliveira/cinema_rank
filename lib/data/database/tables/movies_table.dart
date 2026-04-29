@@ -1,31 +1,25 @@
 import 'package:drift/drift.dart';
 
-// 📖 No Drift, uma "Table" descreve o schema em Dart puro.
-// O build_runner gera a classe de dados (Movie) e o SQL correspondente.
-// Usamos nomes em inglês/snake_case conforme convenção SQLite.
 class MoviesTable extends Table {
   @override
   String get tableName => 'movies';
 
-  // UUID v4 gerado na camada de domínio antes de salvar.
   TextColumn get id => text()();
-
   TextColumn get title => text()();
-
   IntColumn get year => integer()();
 
-  TextColumn get genre => text()();
+  // 📖 Coluna legada (v1): mantida para a migração SQLite não precisar
+  // recriar a tabela. Não é mais exibida na UI — use genreId e subGenreId.
+  TextColumn get genre => text().withDefault(const Constant(''))();
 
   TextColumn get director => text()();
-
-  // withDefault('') evita NOT NULL sem valor em migrações futuras.
   TextColumn get synopsis => text().withDefault(const Constant(''))();
-
-  // Nullable: o usuário pode não informar imagem.
   TextColumn get imagePath => text().nullable()();
-
-  // Armazenado como inteiro (Unix timestamp em milissegundos).
   IntColumn get createdAt => integer()();
+
+  // Adicionados na v2: FK para Genre e Subgenre (nullable = "Não selecionado").
+  TextColumn get genreId => text().nullable()();
+  TextColumn get subGenreId => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

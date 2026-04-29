@@ -6,11 +6,17 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_constants.dart';
 import '../../domain/entities/movie.dart';
 
-// Card reutilizável de filme. Aparece na biblioteca e nos dialogs de seleção.
 class MovieCard extends StatelessWidget {
-  const MovieCard({super.key, required this.movie, this.onTap, this.trailing});
+  const MovieCard({
+    super.key,
+    required this.movie,
+    this.genreLabel,
+    this.onTap,
+    this.trailing,
+  });
 
   final Movie movie;
+  final String? genreLabel; // ex: "Ação · Espionagem" — calculado no parent
   final VoidCallback? onTap;
   final Widget? trailing;
 
@@ -26,22 +32,28 @@ class MovieCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppConstants.kSpacingMedium),
           child: Row(
             children: [
-              _Poster(imagePath: movie.imagePath),
+              MoviePoster(imagePath: movie.imagePath),
               const SizedBox(width: AppConstants.kSpacingMedium),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(movie.title,
-                        style: theme.textTheme.titleMedium,
-                        overflow: TextOverflow.ellipsis),
+                    Text(
+                      movie.title,
+                      style: theme.textTheme.titleMedium,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 2),
-                    Text('${movie.year} · ${movie.genre}',
-                        style: theme.textTheme.bodySmall),
-                    Text(movie.director,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        )),
+                    Text(
+                      [movie.year.toString(), ?genreLabel].join(' · '),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    Text(
+                      movie.director,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -54,18 +66,28 @@ class MovieCard extends StatelessWidget {
   }
 }
 
-class _Poster extends StatelessWidget {
-  const _Poster({this.imagePath});
+// Widget de poster reutilizável nos 3 modos de exibição.
+class MoviePoster extends StatelessWidget {
+  const MoviePoster({
+    super.key,
+    this.imagePath,
+    this.width = AppConstants.kMovieImageWidth,
+    this.height = AppConstants.kMovieImageHeight,
+    this.borderRadius = 6,
+  });
 
   final String? imagePath;
+  final double width;
+  final double height;
+  final double borderRadius;
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(borderRadius),
       child: SizedBox(
-        width: AppConstants.kMovieImageWidth,
-        height: AppConstants.kMovieImageHeight,
+        width: width,
+        height: height,
         child: imagePath != null && File(imagePath!).existsSync()
             ? Image.file(File(imagePath!), fit: BoxFit.cover)
             : ColoredBox(

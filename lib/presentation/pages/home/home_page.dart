@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_constants.dart';
 import '../movies/movies_page.dart';
 import '../rankings/rankings_page.dart';
+import '../settings/settings_page.dart';
 
-// Tela inicial com navegação lateral (NavigationRail) para Desktop.
-// 📖 NavigationRail é o padrão Material para Desktop; substitui BottomNavigationBar
-// que é otimizado para telas pequenas/touch.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -17,7 +15,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  static const _pages = [MoviesPage(), RankingsPage()];
+  static const _pages = [MoviesPage(), RankingsPage(), SettingsPage()];
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +48,11 @@ class _HomePageState extends State<HomePage> {
                 icon: Icon(Icons.format_list_numbered_outlined),
                 selectedIcon: Icon(Icons.format_list_numbered),
                 label: Text('Rankings'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.settings_outlined),
+                selectedIcon: Icon(Icons.settings),
+                label: Text('Config.'),
               ),
             ],
           ),

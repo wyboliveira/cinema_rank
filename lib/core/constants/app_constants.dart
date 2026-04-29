@@ -19,5 +19,8 @@ class AppConstants {
 
   // Banco de dados
   static const String kDatabaseFileName = 'cinema_rank.db';
-  static const int kDatabaseVersion = 1;
+  static const int kDatabaseVersion = 2;
+
+  // Chave usada na tabela app_settings para a preferência de tema.
+  static const String kSettingThemeKey = 'theme';
 }
