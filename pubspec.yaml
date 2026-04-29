@@ -1,0 +1,57 @@
+name: cinema_rank
+description: Sistema interativo de ranking de filmes — Flutter Desktop (Windows).
+version: 0.1.0+1
+publish_to: none
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Estado ────────────────────────────────────────────────────────────────
+  # Gerenciamento de estado reativo com providers imutáveis e code generation.
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # ── Banco de dados ─────────────────────────────────────────────────────────
+  # ORM type-safe para SQLite; suporta Windows Desktop nativamente.
+  drift: ^2.21.0
+  sqlite3_flutter_libs: ^0.5.27
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # ── Seleção de arquivos / imagens ──────────────────────────────────────────
+  # Permite ao usuário navegar e selecionar imagens do sistema de arquivos.
+  file_picker: ^8.1.4
+
+  # ── Utilitários ────────────────────────────────────────────────────────────
+  uuid: ^4.5.1      # IDs únicos para entidades
+  intl: ^0.19.0     # Formatação de datas e números
+
+  # ── UI / Animações ─────────────────────────────────────────────────────────
+  # Animações declarativas leves para feedback visual do drag-and-drop.
+  flutter_animate: ^4.5.0
+  google_fonts: ^6.2.1
+
+  # ── Logging ────────────────────────────────────────────────────────────────
+  # Logs estruturados com níveis (debug, info, warning, error) e cores no terminal.
+  logger: ^2.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # Gerador de código para Drift (DAOs, tabelas) e Riverpod (providers tipados).
+  build_runner: ^2.4.13
+  drift_dev: ^2.21.0
+  riverpod_generator: ^2.6.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/fonts/
