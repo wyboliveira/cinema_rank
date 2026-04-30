@@ -126,23 +126,16 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
   }
 
   Future<void> _save() async {
-    // debugPrint vai para o terminal do `flutter run` independente de logger
-    // ou ScaffoldMessenger — confirma que o botão está alcançando este método.
-    debugPrint('[Cinema] _save() chamado — title="${_title.text}" year="${_year.text}" director="${_director.text}"');
-
-    // Dispara validação visual (bordas vermelhas) mas não usa o resultado
-    // como critério — Form.currentState pode ser null em alguns cenários de layout.
+    // Dispara validação visual (bordas vermelhas) sem depender do resultado —
+    // Form.currentState pode ser null em edge cases de layout.
     _formKey.currentState?.validate();
 
-    // Validação autoritativa direto dos controllers, sem depender do Form.
     if (!_validateControllers()) {
-      debugPrint('[Cinema] _save(): validação falhou');
       _showDialog('Preencha todos os campos obrigatórios: Título, Ano e Diretor.');
       return;
     }
 
     try {
-      debugPrint('[Cinema] _save(): iniciando persistência');
       final notifier = ref.read(movieNotifierProvider.notifier);
       final existing = widget.existingMovie;
 
@@ -167,7 +160,6 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
             );
 
       await notifier.save(movie);
-      debugPrint('[Cinema] _save(): filme salvo — fechando dialog');
 
       if (mounted) Navigator.of(context).pop();
     } catch (e, st) {
