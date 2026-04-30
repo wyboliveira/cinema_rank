@@ -10,6 +10,7 @@ import 'package:super_clipboard/super_clipboard.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/logger.dart';
 import '../../../domain/entities/genre.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/subgenre.dart';
@@ -125,34 +126,58 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    // Null-safe: se formState for null o Form não está montado; usamos
+    // validação manual pelos controllers como fallback e logamos o aviso.
+    final formState = _formKey.currentState;
+    final valid = formState != null
+        ? formState.validate()
+        : _validateControllers();
+    if (!valid) return;
 
-    final notifier = ref.read(movieNotifierProvider.notifier);
-    final existing = widget.existingMovie;
+    try {
+      final notifier = ref.read(movieNotifierProvider.notifier);
+      final existing = widget.existingMovie;
 
-    final movie = existing != null
-        ? existing.copyWith(
-            title: _title.text.trim(),
-            year: int.parse(_year.text.trim()),
-            director: _director.text.trim(),
-            synopsis: _synopsis.text.trim(),
-            imagePath: _imagePath,
-            genreId: _selectedGenreId,
-            subGenreId: _selectedSubGenreId,
-          )
-        : notifier.createNew(
-            title: _title.text.trim(),
-            year: int.parse(_year.text.trim()),
-            director: _director.text.trim(),
-            synopsis: _synopsis.text.trim(),
-            imagePath: _imagePath,
-            genreId: _selectedGenreId,
-            subGenreId: _selectedSubGenreId,
-          );
+      final movie = existing != null
+          ? existing.copyWith(
+              title: _title.text.trim(),
+              year: int.parse(_year.text.trim()),
+              director: _director.text.trim(),
+              synopsis: _synopsis.text.trim(),
+              imagePath: _imagePath,
+              genreId: _selectedGenreId,
+              subGenreId: _selectedSubGenreId,
+            )
+          : notifier.createNew(
+              title: _title.text.trim(),
+              year: int.parse(_year.text.trim()),
+              director: _director.text.trim(),
+              synopsis: _synopsis.text.trim(),
+              imagePath: _imagePath,
+              genreId: _selectedGenreId,
+              subGenreId: _selectedSubGenreId,
+            );
 
-    await notifier.save(movie);
+      await notifier.save(movie);
 
-    if (mounted) Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop();
+    } catch (e, st) {
+      AppLogger.error('Erro ao salvar filme', e, st);
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e')),
+        );
+      }
+    }
+  }
+
+  // Fallback usado quando _formKey.currentState é null (Form não montado).
+  bool _validateControllers() {
+    AppLogger.warning('Form state nulo — validando via controllers');
+    final year = int.tryParse(_year.text.trim());
+    return _title.text.trim().isNotEmpty &&
+        year != null &&
+        _director.text.trim().isNotEmpty;
   }
 
   @override
