@@ -132,7 +132,16 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
     final valid = formState != null
         ? formState.validate()
         : _validateControllers();
-    if (!valid) return;
+    if (!valid) {
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(
+            content: Text('Preencha os campos obrigatórios: Título, Ano e Diretor.'),
+          ),
+        );
+      }
+      return;
+    }
 
     try {
       final notifier = ref.read(movieNotifierProvider.notifier);
@@ -204,21 +213,23 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
       },
       child: AlertDialog(
         title: Text(isEdit ? 'Editar Filme' : 'Novo Filme'),
-      // 📖 SizedBox com altura fixa é obrigatório aqui.
-      // IntrinsicHeight + TextFormField(expands: true) conflitam porque
-      // `expands` requer altura finita do pai, que IntrinsicHeight não garante.
+      // 📖 Sem altura fixa no SizedBox externo: erros de validação adicionam
+      // altura aos campos e o dialog se expande sem quebrar o layout.
+      // Synopsis e ImagePicker têm suas próprias alturas fixas via SizedBox
+      // interno — expands:true funciona porque recebe height finita do pai
+      // imediato, sem depender do Column ter altura finita.
       content: SizedBox(
         width: 720,
-        height: 280,
         child: Form(
           key: _formKey,
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Coluna esquerda: Título / Gêneros / Sinopse ───────────────
               Expanded(
                 flex: 3,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _field(_title, 'Título', required: true),
@@ -248,12 +259,10 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
                       ],
                     ),
                     const SizedBox(height: AppConstants.kSpacingSmall),
-                    // Sinopse ocupa o espaço restante da coluna.
-                    Expanded(
+                    SizedBox(
+                      height: 130,
                       child: TextFormField(
                         controller: _synopsis,
-                        // expands: true requer parent com altura finita (garantida
-                        // pelo SizedBox(height: 280) acima).
                         expands: true,
                         maxLines: null,
                         textAlignVertical: TextAlignVertical.top,
@@ -272,6 +281,7 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
               Expanded(
                 flex: 2,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _field(
@@ -283,7 +293,8 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
                     const SizedBox(height: AppConstants.kSpacingSmall),
                     _field(_director, 'Diretor', required: true),
                     const SizedBox(height: AppConstants.kSpacingSmall),
-                    Expanded(
+                    SizedBox(
+                      height: 140,
                       child: _ImagePickerArea(
                         imagePath: _imagePath,
                         onPick: _pickImage,
