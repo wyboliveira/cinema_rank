@@ -47,12 +47,16 @@ class MovieCard extends StatelessWidget {
                     Text(
                       [movie.year.toString(), ?genreLabel].join(' · '),
                       style: theme.textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       movie.director,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
