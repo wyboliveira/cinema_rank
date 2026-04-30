@@ -22,6 +22,9 @@ extension MovieEntityToCompanion on Movie {
     id: Value(id),
     title: Value(title),
     year: Value(year),
+    // Coluna legada (v1): NOT NULL sem DEFAULT no banco migrado.
+    // Deve ser fornecida explicitamente para evitar constraint failure.
+    genre: const Value(''),
     director: Value(director),
     synopsis: Value(synopsis),
     imagePath: Value(imagePath),
