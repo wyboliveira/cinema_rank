@@ -126,24 +126,23 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
   }
 
   Future<void> _save() async {
-    // Null-safe: se formState for null o Form não está montado; usamos
-    // validação manual pelos controllers como fallback e logamos o aviso.
-    final formState = _formKey.currentState;
-    final valid = formState != null
-        ? formState.validate()
-        : _validateControllers();
-    if (!valid) {
-      if (mounted) {
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          const SnackBar(
-            content: Text('Preencha os campos obrigatórios: Título, Ano e Diretor.'),
-          ),
-        );
-      }
+    // debugPrint vai para o terminal do `flutter run` independente de logger
+    // ou ScaffoldMessenger — confirma que o botão está alcançando este método.
+    debugPrint('[Cinema] _save() chamado — title="${_title.text}" year="${_year.text}" director="${_director.text}"');
+
+    // Dispara validação visual (bordas vermelhas) mas não usa o resultado
+    // como critério — Form.currentState pode ser null em alguns cenários de layout.
+    _formKey.currentState?.validate();
+
+    // Validação autoritativa direto dos controllers, sem depender do Form.
+    if (!_validateControllers()) {
+      debugPrint('[Cinema] _save(): validação falhou');
+      _showDialog('Preencha todos os campos obrigatórios: Título, Ano e Diretor.');
       return;
     }
 
     try {
+      debugPrint('[Cinema] _save(): iniciando persistência');
       final notifier = ref.read(movieNotifierProvider.notifier);
       final existing = widget.existingMovie;
 
@@ -168,25 +167,40 @@ class _MovieFormDialogState extends ConsumerState<MovieFormDialog> {
             );
 
       await notifier.save(movie);
+      debugPrint('[Cinema] _save(): filme salvo — fechando dialog');
 
       if (mounted) Navigator.of(context).pop();
     } catch (e, st) {
       AppLogger.error('Erro ao salvar filme', e, st);
-      if (mounted) {
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e')),
-        );
-      }
+      _showDialog('Erro ao salvar: $e');
     }
   }
 
-  // Fallback usado quando _formKey.currentState é null (Form não montado).
+  // Validação autoritativa pelos controllers — não depende do Form/GlobalKey.
   bool _validateControllers() {
-    AppLogger.warning('Form state nulo — validando via controllers');
     final year = int.tryParse(_year.text.trim());
     return _title.text.trim().isNotEmpty &&
         year != null &&
         _director.text.trim().isNotEmpty;
+  }
+
+  // Usa showDialog (Navigator) em vez de SnackBar para garantir visibilidade
+  // independente de haver ScaffoldMessenger no contexto do dialog.
+  void _showDialog(String message) {
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Aviso'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
