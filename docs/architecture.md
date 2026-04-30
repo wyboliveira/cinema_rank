@@ -58,7 +58,15 @@ Regras de negócio puras. Zero dependências de frameworks.
 
 ```
 Movie
-  id, title, year, genre, director, synopsis, imagePath, createdAt
+  id, title, year, director, synopsis, imagePath, createdAt
+  genreId?    — FK para Genre (null = "Não selecionado")
+  subGenreId? — FK para Subgenre (null = "Não selecionado")
+
+Genre
+  id, name, isDefault
+
+Subgenre
+  id, name, genreId (FK para Genre), isDefault
 
 RankingList
   id, title, category, createdAt
@@ -93,7 +101,8 @@ Implementações concretas dos repositórios, schema do banco e modelos.
 
 **Banco de dados** (`data/database/`):
 - `AppDatabase` — classe principal Drift com `schemaVersion` e `migration`.
-- `MoviesTable` — tabela de filmes.
+- `MoviesTable` — tabela de filmes (inclui coluna `genre` legada da v1, mantida por compatibilidade).
+- `GenresTable` / `SubgenresTable` — taxonomia em dois níveis.
 - `RankingListsTable` — tabela de listas.
 - `RankingItemsTable` — tabela de itens (FK para as duas acima).
 - `daos/` — um DAO por entidade, com queries otimizadas.
@@ -119,9 +128,9 @@ UI e estado de tela. Nunca contém regras de negócio.
 - `rankings/` — lista de rankings + tela de ranking individual com drag-and-drop.
 
 **Widgets** (`presentation/widgets/`):
-- `MovieCard` — card de filme reutilizável.
+- `MovieCard` + `MoviePoster` — card e poster de filme reutilizáveis nos três modos de exibição.
 - `RankingItemTile` — tile arrastável de item de ranking.
-- `ImagePickerField` — campo de seleção de imagem com preview.
+- `_ImagePickerArea` (dentro de `movie_form_dialog.dart`) — área de seleção de imagem via file_picker ou Ctrl+V (super_clipboard).
 
 ---
 

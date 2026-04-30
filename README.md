@@ -9,8 +9,10 @@ Sistema interativo de ranking de filmes construído com **Flutter Desktop (Windo
 
 ## Funcionalidades
 
-- **Cadastro de filmes** — título, ano, gênero, diretor, sinopse e imagem local.
-- **Biblioteca** — visualize e pesquise todos os filmes cadastrados.
+- **Cadastro de filmes** — título, ano, gênero, subgênero, diretor, sinopse e imagem.
+- **Imagem por arquivo ou clipboard** — selecione uma imagem pelo explorador de arquivos ou cole diretamente com Ctrl+V (PNG, JPEG, GIF, WebP, BMP, TIFF).
+- **Gêneros e subgêneros** — taxonomia em dois níveis totalmente gerenciável pelo usuário.
+- **Biblioteca** — visualize todos os filmes em três modos: lista, grade e compacto.
 - **Listas de ranking** — crie listas temáticas com título e categoria livres.
 - **Drag-and-drop** — ordene filmes na lista arrastando com animações fluidas.
 - **Persistência local** — banco SQLite embutido, sem necessidade de servidor.
@@ -27,6 +29,8 @@ Sistema interativo de ranking de filmes construído com **Flutter Desktop (Windo
 | Drift (SQLite) | Banco de dados local type-safe |
 | flutter_animate | Animações de drag-and-drop |
 | file_picker | Seleção de imagem do disco |
+| super_clipboard | Acesso a dados binários (imagens) na área de transferência |
+| google_fonts | Tipografia consistente |
 | logger | Logs estruturados |
 
 ---

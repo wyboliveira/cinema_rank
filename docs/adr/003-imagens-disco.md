@@ -20,16 +20,23 @@ como armazená-la dentro da aplicação Desktop.
 
 ## Decisão
 
-**Fase inicial:** salvar apenas o caminho absoluto da imagem no campo
-`imagePath` do banco. Simples de implementar e adequado para o escopo atual.
+**Estratégia híbrida (implementada):**
 
-**Evolução prevista (ADR futuro):** copiar a imagem para o diretório de dados
-do app (`path_provider → getApplicationSupportDirectory`) ao cadastrar, usando
-o UUID do filme como nome do arquivo. Isso elimina o problema de arquivo movido.
+- **Seleção via file_picker:** salva apenas o caminho absoluto da imagem no
+  campo `imagePath`. Simples; depende do arquivo permanecer no local original.
+
+- **Cole via Ctrl+V (super_clipboard):** os bytes da imagem são copiados
+  imediatamente para `getApplicationSupportDirectory()/pasted_images/<uuid>.<ext>`.
+  A imagem colada é permanente e portável — não depende da fonte original.
+
+Esta abordagem híbrida foi motivada pela necessidade técnica: imagens da
+clipboard chegam como dados binários em memória, sem caminho de arquivo, então
+a cópia para disco é inevitável. Ao fazer isso apenas para imagens coladas,
+preserva-se a simplicidade para o caso de seleção de arquivo.
 
 ## Consequências
 
-- O usuário deve manter as imagens nos caminhos originais (limitação da fase atual).
-- A exibição usa `Image.file(File(imagePath))` com tratamento de erro para
-  arquivo ausente.
-- A migração para cópia local será um passo de refatoração documentado.
+- Imagens selecionadas via file_picker podem ser perdidas se o arquivo for movido.
+- Imagens coladas via Ctrl+V são armazenadas em `AppSupportDir/pasted_images/` e nunca se perdem.
+- A exibição usa `Image.file(File(imagePath))` com fallback para `Icon(Icons.movie)` se o arquivo não existir.
+- Uma futura refatoração pode unificar as duas estratégias copiando sempre para `AppSupportDir`.

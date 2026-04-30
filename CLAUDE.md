@@ -26,7 +26,7 @@ de decisões técnicas.
 | Linguagem | Dart 3.11+ | Linguagem nativa do Flutter |
 | Estado | Riverpod 2 + riverpod_annotation | Reativo, type-safe, testável |
 | Banco de dados | Drift + SQLite | ORM type-safe, suporte nativo Windows |
-| Imagens | file_picker | Seleção de arquivo local no Desktop |
+| Imagens | file_picker + super_clipboard | Seleção de arquivo e colar da área de transferência (Ctrl+V) |
 | Animações | flutter_animate | DSL declarativa leve |
 | Tipografia | google_fonts | Consistência visual |
 | Logging | logger | Logs estruturados com níveis |
@@ -85,11 +85,27 @@ presentation → domain ← data
 | id | String (UUID) | Identificador único |
 | title | String | Título do filme |
 | year | int | Ano de lançamento |
-| genre | String | Gênero principal |
 | director | String | Diretor |
 | synopsis | String | Sinopse curta |
 | imagePath | String? | Caminho absoluto da imagem no disco |
+| genreId | String? | FK → Genre (null = não selecionado) |
+| subGenreId | String? | FK → Subgenre (null = não selecionado) |
 | createdAt | DateTime | Data de cadastro |
+
+### Genre
+| Campo | Tipo | Descrição |
+|---|---|---|
+| id | String (UUID) | Identificador único |
+| name | String | Nome do gênero |
+| isDefault | bool | Se foi pré-criado pelo sistema |
+
+### Subgenre
+| Campo | Tipo | Descrição |
+|---|---|---|
+| id | String (UUID) | Identificador único |
+| name | String | Nome do subgênero |
+| genreId | String | FK → Genre |
+| isDefault | bool | Se foi pré-criado pelo sistema |
 
 ### RankingList
 | Campo | Tipo | Descrição |
